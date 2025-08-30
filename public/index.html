@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MLoader</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <h1>Meme Loader</h1>
+
+    <div class="container">
+      <div class="chat">
+        <input type="text" id="msg" placeholder="Type a message..." />
+        <button id="sendbtn">Send</button>
+      </div>
+
+      <div class="upload">
+        <input type="file" id="file" />
+        <button id="uploadbtn">Upload</button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div id="messages"></div>
+      <div id="uploads"></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      const msg = document.getElementById("msg");
+      const sendbtn = document.getElementById("sendbtn");
+      const messagesDiv = document.getElementById("messages");
+      const fileInput = document.getElementById("file");
+      const uploadbtn = document.getElementById("uploadbtn");
+      const uploadsDiv = document.getElementById("uploads");
+
+      socket.on("message", (message) => {
+        const p = document.createElement("p");
+        p.innerText = message;
+        messagesDiv.appendChild(p);
+      });
+
+      sendbtn.addEventListener("click", () => {
+        const message = msg.value;
+        console.log("Sending message:", message);
+        socket.emit("client-message", message);
+      });
+
+      socket.on("file-upload", (fileUrl) => {
+        const imgContainer = document.createElement("div");
+        imgContainer.className = "image-container";
+
+        const img = document.createElement("img");
+        img.src = fileUrl;
+        img.style.maxWidth = "200px";
+
+        const upvoteButton = document.createElement("button");
+        upvoteButton.innerText = "Upvote";
+
+        const upvoteCount = document.createElement("span");
+        upvoteCount.innerText = "0";
+
+        upvoteButton.addEventListener("click", () => {
+          let count = parseInt(upvoteCount.innerText);
+          upvoteCount.innerText = count + 1;
+          
+        });
+
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(upvoteButton);
+        imgContainer.appendChild(upvoteCount);
+        uploadsDiv.appendChild(imgContainer);
+      });
+
+      uploadbtn.addEventListener("click", () => {
+        const file = fileInput.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const fileUrl = event.target.result;
+            socket.emit("file-upload", fileUrl);
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    </script>
+  </body>
+</html>
